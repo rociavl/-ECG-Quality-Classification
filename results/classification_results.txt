@@ -1,0 +1,183 @@
+======================================================================
+ECG QUALITY CLASSIFICATION - FINAL RESULTS
+======================================================================
+Project: BSA Course - ECG Quality Assessment
+Date: December 2024
+
+======================================================================
+1. DATASET INFORMATION
+======================================================================
+Source:         PhysioNet/Computing in Cardiology Challenge 2011
+Total records:  998
+Acceptable:     773 (77.5%)
+Unacceptable:   225 (22.5%)
+Duration:       10 seconds per record
+Sampling rate:  500 Hz
+Leads:          12-lead ECG
+
+======================================================================
+2. VALIDATION METHODOLOGY
+======================================================================
+Method: 80/20 Held-Out Split (stratified by class)
+
+  Training set:  798 records (80%) - used to design thresholds
+  Test set:      200 records (20%) - held out for final evaluation
+
+  Split details:
+    - Acceptable:   618 train / 155 test
+    - Unacceptable: 180 train / 45 test
+
+  Note: Thresholds were designed using domain knowledge from BSA course
+  theory and physiological limits, NOT learned from data.
+
+======================================================================
+3. CLASSIFIER PERFORMANCE (on 20% held-out test set)
+======================================================================
+Confusion Matrix:
+                    Predicted
+                  Accept  Reject
+  Actual Accept     133      22
+  Actual Reject      16      29
+
+Metrics:
+  Accuracy:     81.0%
+  Precision:    89.3%
+  Recall:       85.8% (Sensitivity)
+  Specificity:  64.4%
+  F1 Score:     87.5%
+
+Interpretation:
+  - 133 good ECGs correctly accepted (True Positives)
+  - 29 bad ECGs correctly rejected (True Negatives)
+  - 16 bad ECGs wrongly accepted (False Positives)
+  - 22 good ECGs wrongly rejected (False Negatives)
+
+Full Dataset Results (for reference):
+  Accuracy: 81.6%, F1: 88.1% (similar to held-out, no overfitting)
+
+======================================================================
+4. FEATURE COMPARISON: GOOD vs BAD ECGs
+======================================================================
+Feature                      Good ECG           Bad ECG
+----------------------------------------------------------------------
+SNR (dB)                     10.96 +/- 4.12      0.68 +/- 12.39
+Beat count                   12.47 +/- 3.10     14.75 +/- 6.19
+Heart rate (bpm)             74.50 +/- 17.43    84.94 +/- 33.18
+RR variability (CV)           0.08 +/- 0.12      0.23 +/- 0.22
+Cardiac power ratio           0.94 +/- 0.08      0.63 +/- 0.42
+f_mean (Hz)                  10.66 +/- 3.86      6.74 +/- 6.77
+f_std (Hz)                   14.84 +/- 5.88     10.29 +/- 9.82
+f_iqr (Hz)                    9.13 +/- 3.46      6.00 +/- 7.43
+Spectral kurtosis            96.32 +/- 86.08   138.87 +/- 247.45
+Spectral flatness             0.02 +/- 0.01      0.01 +/- 0.02
+Stationarity index            0.98 +/- 0.03      0.89 +/- 0.29
+
+Key Observations:
+  - Good ECGs have higher SNR (10.96 vs 0.68 dB)
+  - Good ECGs have lower RR variability (0.08 vs 0.23)
+  - Good ECGs have higher cardiac power ratio (0.94 vs 0.63)
+  - Good ECGs have higher f_mean (10.66 vs 6.74 Hz)
+  - Good ECGs have higher stationarity (0.98 vs 0.89)
+
+======================================================================
+5. CLASSIFICATION RULES (16 total)
+======================================================================
+Rule  Feature              Threshold           Theory
+----------------------------------------------------------------------
+ 1    SNR                  >= 5.0 dB           Signal vs noise power
+ 2    Beat count           5-30 beats          Expected for 10s @ 30-180 bpm
+ 3    Heart rate           30-200 bpm          Physiological limits
+ 4    RR regularity        CV <= 0.5           Rhythm consistency
+ 5    Baseline wander      ratio <= 0.3        Low-frequency drift
+ 6    Cardiac power        >= 50%              Power in 0.5-40 Hz band
+ 7    High-freq noise      <= 30%              Power above 40 Hz
+ 8    Artifacts            <= 20% frames       STFT artifact detection
+ 9    Stationarity         >= 0.3              Time-frequency stability
+10    Lead correlation     >= 0.3              Multi-lead consistency
+11    Spectral flatness    <= 0.4              Wiener entropy (psdpar.m)
+12    Spectral spread      <= 25 Hz            f_std maximum (psdpar.m)
+13    Spectral kurtosis    >= 1.0              Spectral peakiness (psdpar.m)
+14    f_mean (centroid)    >= 8.5 Hz           Spectral centroid (psdpar.m)
+15    f_std (spread)       >= 11.0 Hz          Minimum spread (psdpar.m)
+16    f_iqr (range)        >= 7.0 Hz           Frequency IQR (psdpar.m)
+
+Decision Logic:
+  - Critical rules: SNR, beat count, cardiac power must ALL pass
+  - Majority rule: At least 70% of all rules must pass
+  - If both conditions met: ECG is Acceptable
+  - Otherwise: ECG is Unacceptable
+
+======================================================================
+6. PSDPAR.M PARAMETERS (12 total from MATLAB)
+======================================================================
+Parameter              Description                        Used in Rules
+----------------------------------------------------------------------
+f_peak                 Peak frequency (max PSD)           No
+f_mean                 Spectral centroid                  Yes (Rule 14)
+f_median               Median frequency (50% power)       No
+f_q25                  25th percentile frequency          No
+f_q75                  75th percentile frequency          No
+f_max95                95th percentile (bandwidth)        No
+f_std                  Spectral spread                    Yes (Rules 12,15)
+f_iqr                  Interquartile range                Yes (Rule 16)
+hShannon               Normalized Shannon entropy         No
+spectral_asymmetry     Skewness coefficient               No
+spectral_kurtosis      Kurtosis coefficient               Yes (Rule 13)
+spectral_flatness      Wiener entropy                     Yes (Rule 11)
+
+======================================================================
+7. FIGURES GENERATED
+======================================================================
+Location: D:\Signals_Project\results\figures\
+
+1. pan_tompkins_theory.png
+   - Pan-Tompkins algorithm steps (bandpass, derivative, squared, MWI)
+   - Comparison of good vs bad ECG processing
+
+2. spectral_analysis.png
+   - PSD comparison using periodogram
+   - Good ECG vs bad ECG frequency content
+
+3. spectral_parameters_comparison.png
+   - All psdpar.m parameters visualized
+   - Box plots comparing good vs bad ECGs
+
+4. spectral_shape_scatter.png
+   - Kurtosis vs asymmetry scatter plot
+   - Shows class separation in feature space
+
+5. timefreq_analysis.png
+   - STFT spectrograms
+   - Time-frequency representation of ECG
+
+6. filtering_demo.png
+   - Bandpass filter effects
+   - Before/after comparison
+
+7. ar_order_selection.png
+   - AR model order selection (arord.m)
+   - AIC/BIC criteria
+
+======================================================================
+ BSA COURSE THEORY APPLIED
+======================================================================
+Chapter 3: Filtering
+  - Bandpass filtering (5-15 Hz for QRS detection)
+  - Baseline wander removal (< 0.5 Hz)
+  - High-frequency noise detection (> 40 Hz)
+
+Chapter 4: Frequency-Domain Characterization
+  - Periodogram PSD estimation
+  - psdpar.m spectral parameters
+  - Cardiac band power ratio
+
+Chapter 5: Time-Frequency Analysis
+  - STFT spectrogram
+  - Stationarity index
+  - Artifact frame detection
+
+Pan-Tompkins Algorithm:
+  - QRS detection
+  - R-peak localization
+  - Heart rate calculation
+
