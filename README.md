@@ -354,4 +354,4 @@ For detailed technical explanation, see:
 
 ---
 
-*BSA Course Project - December 2024*
+*BSA Course Project - December 2025*

@@ -2,7 +2,7 @@
 ECG QUALITY CLASSIFICATION - FINAL RESULTS
 ======================================================================
 Project: BSA Course - ECG Quality Assessment
-Date: December 2024
+Date: December 2025
 
 ======================================================================
 1. DATASET INFORMATION
